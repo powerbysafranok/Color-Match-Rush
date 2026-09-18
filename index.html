@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Color Match Rush</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#232326">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #232326;
+    --ink-soft: #4a4a4f;
+    --paper: #f4f1ea;
+    --panel: #ffffff;
+    --line: #232326;
+    --accent: #ff3b6e;
+    --accent-ink: #ffffff;
+    --good: #1f9d55;
+    --bad: #e0332f;
+    --shadow: rgba(35,35,38,0.16);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #f2efe9;
+      --ink-soft: #c9c5bd;
+      --paper: #17181c;
+      --panel: #202126;
+      --line: #f2efe9;
+      --accent: #ff5c86;
+      --accent-ink: #17181c;
+      --good: #3ec97a;
+      --bad: #ff5a52;
+      --shadow: rgba(0,0,0,0.45);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #f2efe9;
+    --ink-soft: #c9c5bd;
+    --paper: #17181c;
+    --panel: #202126;
+    --line: #f2efe9;
+    --accent: #ff5c86;
+    --accent-ink: #17181c;
+    --good: #3ec97a;
+    --bad: #ff5a52;
+    --shadow: rgba(0,0,0,0.45);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Space Grotesk', -apple-system, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-x: hidden;
+  }
+
+  .stage {
+    width: 100%;
+    max-width: 460px;
+    position: relative;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 3px solid var(--line);
+    border-radius: 22px;
+    box-shadow: 8px 8px 0 var(--shadow);
+    padding: 28px 24px 32px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 60ms ease;
+  }
+
+  .card.shake { animation: shake 320ms ease; }
+  @keyframes shake {
+    10%, 90% { transform: translateX(-3px); }
+    20%, 80% { transform: translateX(5px); }
+    30%, 50%, 70% { transform: translateX(-8px); }
+    40%, 60% { transform: translateX(8px); }
+  }
+
+  h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: clamp(28px, 7vw, 34px);
+    line-height: 1.05;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .lede {
+    font-size: 15px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin: 0 0 22px;
+    max-width: 34ch;
+  }
+
+  .rule-line {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .rule-line b { color: var(--ink); font-weight: 700; }
+
+  .best-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-top: 2px dashed var(--line);
+    border-bottom: 2px dashed var(--line);
+    padding: 14px 0;
+    margin: 20px 0 24px;
+  }
+  .best-row .label { font-size: 13px; color: var(--ink-soft); }
+  .best-row .value { font-family: 'Archivo Black', sans-serif; font-size: 26px; }
+
+  button {
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: 3px solid var(--line);
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 18px;
+    padding: 16px;
+    box-shadow: 5px 5px 0 var(--shadow);
+    transition: transform 80ms ease, box-shadow 80ms ease;
+  }
+  .btn-primary:active {
+    transform: translate(3px, 3px);
+    box-shadow: 2px 2px 0 var(--shadow);
+  }
+
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--ink);
+    border: 2px solid var(--line);
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 12px;
+    margin-top: 10px;
+  }
+
+  /* ---- Gameplay screen ---- */
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .hud .score-block { line-height: 1.1; }
+  .hud .score-label {
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .hud .score-value {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 30px;
+  }
+  .hud .best-chip {
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+  .hud .best-chip b { color: var(--ink); }
+
+  .timer-track {
+    height: 10px;
+    border: 2px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--paper);
+    margin-bottom: 22px;
+  }
+  .timer-fill {
+    height: 100%;
+    width: 100%;
+    background: var(--good);
+    transform-origin: left;
+    transition: width 60ms linear, background-color 150ms ease;
+  }
+  .timer-fill.warn { background: #f2a63a; }
+  .timer-fill.danger { background: var(--bad); }
+
+  .arena {
+    position: relative;
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    border: 3px solid var(--line);
+    border-radius: 18px;
+    background: var(--paper);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+
+  .shape {
+    width: 84px;
+    height: 84px;
+    border: 3px solid var(--line);
+  }
+  .shape.circle { border-radius: 50%; }
+  .shape.square { border-radius: 10px; }
+  .shape.triangle {
+    width: 0; height: 0;
+    border-left: 44px solid transparent;
+    border-right: 44px solid transparent;
+    border-bottom: 84px solid;
+    border-top: none;
+    background: none !important;
+  }
+  .shape.triangle { border-bottom-color: var(--shape-color, gray); border-left-color: transparent; border-right-color: transparent; }
+  .shape:not(.triangle) { background: var(--shape-color, gray); }
+
+  .word {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 30px;
+    letter-spacing: 0.02em;
+  }
+
+  .flash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .flash.correct { background: var(--good); animation: flashpop 320ms ease; }
+  .flash.wrong { background: var(--bad); animation: flashpop 320ms ease; }
+  @keyframes flashpop {
+    0% { opacity: 0.55; }
+    100% { opacity: 0; }
+  }
+
+  .answer-row {
+    display: flex;
+    gap: 12px;
+  }
+  .answer-btn {
+    flex: 1;
+    padding: 18px 8px;
+    border-radius: 14px;
+    border: 3px solid var(--line);
+    font-weight: 700;
+    font-size: 16px;
+    box-shadow: 4px 4px 0 var(--shadow);
+    transition: transform 80ms ease, box-shadow 80ms ease;
+  }
+  .answer-btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 var(--shadow);
+  }
+  .answer-btn.match { background: var(--good); color: #fff; }
+  .answer-btn.no-match { background: var(--bad); color: #fff; }
+
+  .key-hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+  }
+  kbd {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: inherit;
+    font-size: 11px;
+  }
+
+  /* ---- Game over ---- */
+  .go-score {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    margin: 4px 0 4px;
+  }
+  .go-label {
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .record-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card.shake, .flash.correct, .flash.wrong { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="card" id="card">
+
+    <!-- START SCREEN -->
+    <div class="screen active" id="screen-start">
+      <h1>Color Match Rush</h1>
+      <p class="lede">A shape and a word appear together. Decide fast: does the shape's color match the color the word names?</p>
+      <div class="rule-line">🟢 <span><b>MATCH</b> — the word names the shape's actual color.</span></div>
+      <div class="rule-line">🔴 <span><b>NO MATCH</b> — it doesn't. Ignore the word's own text color, that's just noise.</span></div>
+      <div class="best-row">
+        <span class="label">Best score</span>
+        <span class="value" id="start-best">0</span>
+      </div>
+      <button class="btn-primary" id="btn-start">Start</button>
+    </div>
+
+    <!-- GAMEPLAY SCREEN -->
+    <div class="screen" id="screen-play">
+      <div class="hud">
+        <div class="score-block">
+          <div class="score-label">Score</div>
+          <div class="score-value" id="play-score">0</div>
+        </div>
+        <div class="best-chip">Best<br><b id="play-best">0</b></div>
+      </div>
+      <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+      <div class="arena" id="arena">
+        <div class="flash" id="flash"></div>
+        <div class="shape circle" id="shape"></div>
+        <div class="word" id="word">RED</div>
+      </div>
+      <div class="answer-row">
+        <button class="answer-btn match" id="btn-match">MATCH</button>
+        <button class="answer-btn no-match" id="btn-nomatch">NO MATCH</button>
+      </div>
+      <div class="key-hint">Keyboard: <kbd>←</kbd> or <kbd>A</kbd> = Match &nbsp; <kbd>→</kbd> or <kbd>D</kbd> = No match</div>
+    </div>
+
+    <!-- GAME OVER SCREEN -->
+    <div class="screen" id="screen-over">
+      <div class="go-label">Run over</div>
+      <div class="go-score" id="over-score">0</div>
+      <div id="over-record"></div>
+      <div class="best-row" style="margin-top:20px;">
+        <span class="label">Best score</span>
+        <span class="value" id="over-best">0</span>
+      </div>
+      <button class="btn-primary" id="btn-again">Play again</button>
+      <button class="btn-secondary" id="btn-menu">Main menu</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ============================================================
+  // GAME LOGIC LAYER — no DOM/rendering code below, only state,
+  // round generation, scoring and the difficulty curve. This is
+  // the part to tune when adding stretch features.
+  // ============================================================
+
+  const PALETTE = [
+    { name: "RED",    css: "#e0332f" },
+    { name: "BLUE",   css: "#2b6ef0" },
+    { name: "GREEN",  css: "#1f9d55" },
+    { name: "YELLOW", css: "#f2b632" },
+    { name: "PURPLE", css: "#8b4bd8" },
+    { name: "ORANGE", css: "#f2792a" }
+  ];
+  const SHAPES = ["circle", "square", "triangle"];
+
+  const STORAGE_KEY = "colorMatchRush.bestScore";
+
+  function loadBest() {
+    try {
+      const v = localStorage.getItem(STORAGE_KEY);
+      return v ? parseInt(v, 10) || 0 : 0;
+    } catch (e) { return 0; }
+  }
+  function saveBest(v) {
+    try { localStorage.setItem(STORAGE_KEY, String(v)); } catch (e) { /* ignore */ }
+  }
+
+  const GameState = {
+    score: 0,
+    bestScore: loadBest(),
+    speedLevel: 0,
+    timeWindow: 2.5,
+    currentRound: null,
+    status: "start" // "start" | "playing" | "gameover"
+  };
+
+  // --- Difficulty curve -----------------------------------------
+  // speedLevel rises every 5 correct answers. Time window decays
+  // exponentially toward a floor of 0.6s so the game gets sharply
+  // faster early on, then eases off rather than spiking forever.
+  const BASE_TIME = 2.5;
+  const MIN_TIME = 0.6;
+  const DECAY_PER_LEVEL = 0.14; // higher = faster ramp
+
+  function computeSpeedLevel(score) {
+    return Math.floor(score / 5);
+  }
+  function computeTimeWindow(speedLevel) {
+    const t = MIN_TIME + (BASE_TIME - MIN_TIME) * Math.exp(-DECAY_PER_LEVEL * speedLevel);
+    return Math.max(MIN_TIME, t);
+  }
+  // Higher speedLevel also raises the odds of a "trick" round where
+  // the word's own text color differs from the shape (pure visual
+  // noise) — this never changes the correct answer, only distraction.
+  function trickChance(speedLevel) {
+    return Math.min(0.85, 0.35 + speedLevel * 0.05);
+  }
+
+  function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Generates the next round's data. Kept pure/deterministic given
+  // Math.random, independent of any rendering.
+  function generateRound(speedLevel) {
+    const shape = pickRandom(SHAPES);
+    const shapeColor = pickRandom(PALETTE);
+
+    // Decide match/no-match roughly 50/50 first, THEN pick the word
+    // text consistent with that ground truth — avoids biasing the
+    // color distribution.
+    const isMatch = Math.random() < 0.5;
+    let wordEntry;
+    if (isMatch) {
+      wordEntry = shapeColor;
+    } else {
+      const others = PALETTE.filter(c => c.name !== shapeColor.name);
+      wordEntry = pickRandom(others);
+    }
+
+    // Word's own rendering color: independent distractor, does NOT
+    // affect correctness. On low speed levels it often matches the
+    // word text (calmer); on higher levels it's more often a "trick".
+    let wordColor;
+    if (Math.random() < trickChance(speedLevel)) {
+      const distractors = PALETTE.filter(c => c.name !== wordEntry.name);
+      wordColor = pickRandom(distractors);
+    } else {
+      wordColor = wordEntry;
+    }
+
+    return {
+      shape,
+      shapeColor: shapeColor.css,
+      shapeColorName: shapeColor.name,
+      wordText: wordEntry.name,
+      wordColor: wordColor.css,
+      isMatch
+    };
+  }
+
+  function submitAnswer(isMatchGuess) {
+    if (GameState.status !== "playing") return;
+    const correct = isMatchGuess === GameState.currentRound.isMatch;
+    stopTimer();
+    if (correct) {
+      GameState.score += 1;
+      if (GameState.score > GameState.bestScore) {
+        GameState.bestScore = GameState.score;
+        saveBest(GameState.bestScore);
+      }
+      GameState.speedLevel = computeSpeedLevel(GameState.score);
+      GameState.timeWindow = computeTimeWindow(GameState.speedLevel);
+      onCorrect();
+      nextRound();
+    } else {
+      onWrong();
+      endGame();
+    }
+  }
+
+  function onTimeout() {
+    if (GameState.status !== "playing") return;
+    onWrong();
+    endGame();
+  }
+
+  function startGame() {
+    GameState.score = 0;
+    GameState.speedLevel = 0;
+    GameState.timeWindow = BASE_TIME;
+    GameState.status = "playing";
+    renderHud();
+    nextRound();
+  }
+
+  function nextRound() {
+    GameState.currentRound = generateRound(GameState.speedLevel);
+    renderRound();
+    startTimer(GameState.timeWindow);
+  }
+
+  function endGame() {
+    GameState.status = "gameover";
+    renderGameOver();
+  }
+
+  // ============================================================
+  // RENDERING / UI LAYER
+  // ============================================================
+
+  const el = {
+    card: document.getElementById("card"),
+    screens: {
+      start: document.getElementById("screen-start"),
+      play: document.getElementById("screen-play"),
+      over: document.getElementById("screen-over")
+    },
+    startBest: document.getElementById("start-best"),
+    btnStart: document.getElementById("btn-start"),
+
+    playScore: document.getElementById("play-score"),
+    playBest: document.getElementById("play-best"),
+    timerFill: document.getElementById("timer-fill"),
+    arena: document.getElementById("arena"),
+    shape: document.getElementById("shape"),
+    word: document.getElementById("word"),
+    flash: document.getElementById("flash"),
+    btnMatch: document.getElementById("btn-match"),
+    btnNoMatch: document.getElementById("btn-nomatch"),
+
+    overScore: document.getElementById("over-score"),
+    overBest: document.getElementById("over-best"),
+    overRecord: document.getElementById("over-record"),
+    btnAgain: document.getElementById("btn-again"),
+    btnMenu: document.getElementById("btn-menu")
+  };
+
+  function showScreen(name) {
+    Object.values(el.screens).forEach(s => s.classList.remove("active"));
+    el.screens[name].classList.add("active");
+  }
+
+  function renderHud() {
+    el.playScore.textContent = GameState.score;
+    el.playBest.textContent = GameState.bestScore;
+  }
+
+  function renderRound() {
+    const r = GameState.currentRound;
+    el.shape.className = "shape " + r.shape;
+    el.shape.style.setProperty("--shape-color", r.shapeColor);
+    el.word.textContent = r.wordText;
+    el.word.style.color = r.wordColor;
+    renderHud();
+  }
+
+  function onCorrect() {
+    el.flash.className = "flash correct";
+    // restart animation
+    void el.flash.offsetWidth;
+    el.flash.classList.add("correct");
+  }
+
+  function onWrong() {
+    el.flash.className = "flash wrong";
+    void el.flash.offsetWidth;
+    el.flash.classList.add("wrong");
+    el.card.classList.remove("shake");
+    void el.card.offsetWidth;
+    el.card.classList.add("shake");
+  }
+
+  function renderGameOver() {
+    el.overScore.textContent = GameState.score;
+    el.overBest.textContent = GameState.bestScore;
+    el.overRecord.innerHTML = (GameState.score > 0 && GameState.score === GameState.bestScore)
+      ? '<span class="record-badge">New best!</span>'
+      : "";
+    showScreen("over");
+  }
+
+  // --- Timer (visual + drives timeout) ---------------------------
+  let timerRAF = null;
+  let timerStart = 0;
+  let timerDuration = BASE_TIME;
+
+  function startTimer(durationSeconds) {
+    timerDuration = durationSeconds;
+    timerStart = performance.now();
+    el.timerFill.style.width = "100%";
+    el.timerFill.classList.remove("warn", "danger");
+    cancelAnimationFrame(timerRAF);
+    tick();
+  }
+
+  function tick() {
+    const elapsed = (performance.now() - timerStart) / 1000;
+    const remaining = Math.max(0, timerDuration - elapsed);
+    const pct = (remaining / timerDuration) * 100;
+    el.timerFill.style.width = pct + "%";
+
+    if (pct < 20) {
+      el.timerFill.classList.add("danger");
+      el.timerFill.classList.remove("warn");
+    } else if (pct < 50) {
+      el.timerFill.classList.add("warn");
+      el.timerFill.classList.remove("danger");
+    }
+
+    if (remaining <= 0) {
+      onTimeout();
+      return;
+    }
+    timerRAF = requestAnimationFrame(tick);
+  }
+
+  function stopTimer() {
+    cancelAnimationFrame(timerRAF);
+  }
+
+  // --- Input layer -------------------------------------------------
+  // Single entry point (submitAnswer) so future input modes (swipe,
+  // gamepad, etc.) just need to call the same function.
+  el.btnMatch.addEventListener("click", () => submitAnswer(true));
+  el.btnNoMatch.addEventListener("click", () => submitAnswer(false));
+
+  document.addEventListener("keydown", (e) => {
+    if (GameState.status !== "playing") return;
+    if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+      submitAnswer(true);
+    } else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+      submitAnswer(false);
+    }
+  });
+
+  el.btnStart.addEventListener("click", () => {
+    showScreen("play");
+    startGame();
+  });
+
+  el.btnAgain.addEventListener("click", () => {
+    showScreen("play");
+    startGame();
+  });
+
+  el.btnMenu.addEventListener("click", () => {
+    GameState.status = "start";
+    el.startBest.textContent = GameState.bestScore;
+    showScreen("start");
+  });
+
+  // Initial paint
+  el.startBest.textContent = GameState.bestScore;
+
+  // Register service worker so the game can be "installed" and
+  // works offline once cached. Safe to ignore if it fails.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(() => { /* ignore */ });
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
